@@ -20,7 +20,7 @@ void DebugOverlay_drawCollisionMasks(Runner* runner) {
 
     repeat(instanceCount, i) {
         Instance* inst = runner->instances[i];
-        if (!inst->active || !inst->visible) continue;
+        if (!inst->active) continue;
 
         Sprite* spr = Collision_getSprite(dataWin, inst);
         if (spr == nullptr) continue;
