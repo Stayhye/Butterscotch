@@ -230,15 +230,20 @@ static inline char* RValue_toString(RValue val) {
     char buf[64];
     switch (val.type) {
         case RVALUE_REAL: {
-            double d = (double) val.real;
-            if (isnan(d)) return safeStrdup("NaN");
-            if (isinf(d)) return safeStrdup(d < 0 ? "-inf" : "inf");
+            GMLReal r = val.real;
+            if (isnan(r)) return safeStrdup("NaN");
+            if (isinf(r)) return safeStrdup(r < (GMLReal) 0 ? "-inf" : "inf");
+#ifdef USE_FLOAT_REALS
+            const GMLReal INT_SAFE_BOUND = 9.2233715e18f; // largest float strictly < 2^63
+#else
+            const GMLReal INT_SAFE_BOUND = 9.2233720368547758e18;
+#endif
             // Is this a integer?
-            if (d >= -9.2233720368547758e18 && d <= 9.2233720368547758e18 && d == (double) (int64_t) d) {
-                snprintf(buf, sizeof(buf), "%lld", (long long) (int64_t) d);
+            if (r >= -INT_SAFE_BOUND && r <= INT_SAFE_BOUND && r == (GMLReal) (int64_t) r) {
+                snprintf(buf, sizeof(buf), "%lld", (long long) (int64_t) r);
             } else {
                 // For anything else, we format to two decimal places
-                snprintf(buf, sizeof(buf), "%.2f", d);
+                snprintf(buf, sizeof(buf), "%.2f", (double) r);
             }
             return safeStrdup(buf);
         }
