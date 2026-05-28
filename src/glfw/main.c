@@ -156,6 +156,7 @@ typedef struct {
     const char* playbackInputsPath;
     const char* renderer;
     YoYoOperatingSystem osType;
+    char** gameArgs; // stb_ds array of owned strings, gameArgs[0] = runner executable path
     bool lazyRooms;
     StringBooleanEntry* eagerRooms; // stb_ds string-keyed set of room names
     int profilerFramesBetween; // 0 = disabled
@@ -255,6 +256,7 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
         {"os-type", required_argument, nullptr, 'O'},
         {"profile-gml-scripts", required_argument, nullptr, 'q'},
         {"save-folder", required_argument, nullptr, 'B'},
+        {"game-args", required_argument, nullptr, 'N'},
 #ifdef ENABLE_VM_OPCODE_PROFILER
         {"profile-opcodes", no_argument, nullptr, 'Q'},
 #endif
@@ -473,6 +475,15 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
             case 'B':
                 args->saveFolder = optarg;
                 break;
+            case 'N': {
+                char* dup = safeStrdup(optarg);
+                char* save = nullptr;
+                for (char* tok = strtok_r(dup, " \t\r\n", &save); tok != nullptr; tok = strtok_r(nullptr, " \t\r\n", &save)) {
+                    arrput(args->gameArgs, safeStrdup(tok));
+                }
+                free(dup);
+                break;
+            }
 #ifdef ENABLE_VM_OPCODE_PROFILER
             case 'Q':
                 args->opcodeProfiler = true;
@@ -506,6 +517,8 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
     }
 
     args->dataWinPath = argv[optind];
+
+    arrins(args->gameArgs, 0, safeStrdup(argv[0]));
 
     if (hmlen(args->screenshotFrames) > 0 && args->screenshotPattern == nullptr) {
         fprintf(stderr, "Error: --screenshot-at-frame requires --screenshot to be set\n");
@@ -547,6 +560,8 @@ static void freeCommandLineArgs(CommandLineArgs* args) {
     shfree(args->stackToBeTraced);
     shfree(args->disassemble);
     shfree(args->tilesToBeTraced);
+    repeat(arrlen(args->gameArgs), i) free(args->gameArgs[i]);
+    arrfree(args->gameArgs);
 }
 
 // ===[ SCREENSHOT ]===
@@ -1230,6 +1245,7 @@ int main(int argc, char* argv[]) {
     Runner* runner = Runner_create(dataWin, vm, renderer, (FileSystem*) overlayFs, audioSystem);
     runner->debugMode = args.debug;
     runner->osType = args.osType;
+    Runner_setGameArgs(runner, args.gameArgs, (int32_t) arrlen(args.gameArgs));
     runner->setWindowTitle = setGlfwWindowTitle;
     runner->getWindowSize = getGlfwWindowSize;
     runner->setWindowSize = setGlfwWindowSize;

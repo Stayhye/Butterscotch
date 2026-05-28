@@ -11929,6 +11929,17 @@ static RValue builtin_game_change(VMContext* ctx, MAYBE_UNUSED RValue* args, MAY
     return RValue_makeUndefined();
 }
 
+static RValue builtin_parameter_count(VMContext* ctx, MAYBE_UNUSED RValue* args, MAYBE_UNUSED int32_t argCount) {
+    return RValue_makeReal((int32_t) arrlen(ctx->runner->gameArgs));
+}
+
+static RValue builtin_parameter_string(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeString("");
+    int32_t index = RValue_toInt32(args[0]);
+    if (0 > index || index >= (int32_t) arrlen(ctx->runner->gameArgs)) return RValue_makeString("");
+    return RValue_makeString(ctx->runner->gameArgs[index]);
+}
+
 // ===[ REGISTRATION ]===
 
 void VMBuiltins_registerAll(VMContext* ctx) {
@@ -12729,4 +12740,6 @@ void VMBuiltins_registerAll(VMContext* ctx) {
         VM_registerBuiltin(ctx, "draw_set_colour_write_enable", builtin_gpu_set_colorwriteenable);
     }
     VM_registerBuiltin(ctx, "game_change", builtin_game_change);
+    VM_registerBuiltin(ctx, "parameter_count", builtin_parameter_count);
+    VM_registerBuiltin(ctx, "parameter_string", builtin_parameter_string);
 }
