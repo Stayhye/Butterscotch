@@ -6515,6 +6515,18 @@ static RValue builtin_move_contact_solid(VMContext* ctx, RValue* args, MAYBE_UNU
     return RValue_makeUndefined();
 }
 
+// action_move_contact(dir, maxdist, against): DnD wrapper around move_contact_solid / move_contact_all.
+// * args[2] == 0: solid only
+// * args[2] == 1: use all
+static RValue builtin_action_move_contact(VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
+    if (ctx->currentInstance == nullptr) return RValue_makeUndefined();
+    GMLReal dir = RValue_toReal(args[0]);
+    GMLReal maxdist = RValue_toReal(args[1]);
+    bool useall = RValue_toReal(args[2]) == 1.0;
+    moveContactCommon(ctx->runner, ctx->currentInstance, dir, maxdist, useall);
+    return RValue_makeUndefined();
+}
+
 static RValue builtin_action_snap(VMContext* ctx, MAYBE_UNUSED RValue* args, MAYBE_UNUSED int32_t argCount) {
     GMLReal hsnap = RValue_toReal(args[0]);
     GMLReal vsnap = RValue_toReal(args[1]);
@@ -12298,6 +12310,7 @@ void VMBuiltins_registerAll(VMContext* ctx) {
         VM_registerBuiltin(ctx, "action_move_start", builtin_action_move_start);
         VM_registerBuiltin(ctx, "action_potential_step", builtin_action_potential_step);
         VM_registerBuiltin(ctx, "action_bounce", builtin_action_bounce);
+        VM_registerBuiltin(ctx, "action_move_contact", builtin_action_move_contact);
         VM_registerBuiltin(ctx, "action_snap", builtin_action_snap);
         VM_registerBuiltin(ctx, "action_set_friction", builtin_action_set_friction);
         VM_registerBuiltin(ctx, "action_set_gravity", builtin_action_set_gravity);
