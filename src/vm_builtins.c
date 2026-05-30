@@ -5956,10 +5956,11 @@ static RValue builtin_instance_destroy(VMContext* ctx, RValue* args, int32_t arg
     if (1 > argCount) {
         // No args: destroy the current instance
         if (ctx->currentInstance != nullptr) {
-            Runner_destroyInstance(runner, ctx->currentInstance);
+            Runner_destroyInstance(runner, ctx->currentInstance, true);
         }
         return RValue_makeUndefined();
     }
+    bool runDestroyEvent = argCount >= 2 ? RValue_toBool(args[1]) : true;
     // 1 arg: find and destroy matching instances. Destroy events run user code that can spawn/destroy/instance_change other instances; iterate a snapshot of the bucket so those mutations don't corrupt our loop.
     int32_t id = RValue_toInt32(args[0]);
     if (id >= 0 && runner->dataWin->objt.count > (uint32_t) id) {
@@ -5967,12 +5968,12 @@ static RValue builtin_instance_destroy(VMContext* ctx, RValue* args, int32_t arg
         int32_t snapEnd  = (int32_t) arrlen(runner->instanceSnapshots);
         for (int32_t i = snapBase; snapEnd > i; i++) {
             Instance* inst = runner->instanceSnapshots[i];
-            if (inst->active) Runner_destroyInstance(runner, inst);
+            if (inst->active) Runner_destroyInstance(runner, inst, runDestroyEvent);
         }
         Runner_popInstanceSnapshot(runner, snapBase);
     } else {
         Instance* inst = hmget(runner->instancesById, id);
-        if (inst != nullptr && inst->active) Runner_destroyInstance(runner, inst);
+        if (inst != nullptr && inst->active) Runner_destroyInstance(runner, inst, runDestroyEvent);
     }
     return RValue_makeUndefined();
 }
@@ -6276,7 +6277,7 @@ static RValue builtin_event_perform(VMContext* ctx, RValue* args, int32_t argCou
 static RValue builtin_action_kill_object(VMContext* ctx, MAYBE_UNUSED RValue* args, MAYBE_UNUSED int32_t argCount) {
     Runner* runner = ctx->runner;
     if (ctx->currentInstance != nullptr) {
-        Runner_destroyInstance(runner, ctx->currentInstance);
+        Runner_destroyInstance(runner, ctx->currentInstance, true);
     }
     return RValue_makeUndefined();
 }
