@@ -1500,6 +1500,14 @@ static void cleanupState(Runner* runner) {
         }
     }
 
+    // Free any active file_find_* enumeration session
+    repeat(arrlen(runner->fileFindResults), i) {
+        free(runner->fileFindResults[i]);
+    }
+    arrfree(runner->fileFindResults);
+    runner->fileFindResults = nullptr;
+    runner->fileFindPosition = 0;
+
     if (runner->spatialGrid != nullptr) {
         SpatialGrid_free(runner->spatialGrid);
         runner->spatialGrid = nullptr;

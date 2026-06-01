@@ -452,6 +452,10 @@ struct Runner {
     OpenTextFile openTextFiles[MAX_OPEN_TEXT_FILES];
     OpenBinaryFile openBinaryFiles[MAX_OPEN_BINARY_FILES];
 
+    // Single active file_find_* enumeration session.
+    char** fileFindResults; // stb_ds array of heap-dup'd matched file names (name only, no path)
+    int32_t fileFindPosition; // index of the entry returned by the next file_find_next call
+
     // Async map ID
     int32_t asyncLoadMapId;
 

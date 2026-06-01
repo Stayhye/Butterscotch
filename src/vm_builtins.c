@@ -5574,6 +5574,100 @@ static RValue builtin_file_delete(VMContext* ctx, RValue* args, int32_t argCount
     return RValue_makeUndefined();
 }
 
+// ===[ File Find Functions ]===
+
+// Case-sensitive `*` / `?` wildcard match:
+// "*" matches any run of characters (including empty), "?" matches exactly one character.
+static bool matchWildcard(const char* pattern, const char* name) {
+    const char* star = nullptr; // position in pattern just after the last '*' seen
+    const char* starMatch = nullptr; // position in name where that '*' started matching
+    while (*name != '\0') {
+        if (*pattern == '?' || *pattern == *name) {
+            pattern++;
+            name++;
+        } else if (*pattern == '*') {
+            star = ++pattern; // remember the spot after the '*'
+            starMatch = name; // and where it began consuming
+        } else if (star != nullptr) {
+            // Mismatch, but a previous '*' can absorb one more character: backtrack.
+            pattern = star;
+            name = ++starMatch;
+        } else {
+            return false;
+        }
+    }
+    // Trailing '*'s in the pattern match the empty remainder.
+    while (*pattern == '*') pattern++;
+    return *pattern == '\0';
+}
+
+// Frees the active file_find_* session, if any.
+static void closeFileFindSession(Runner* runner) {
+    repeat(arrlen(runner->fileFindResults), i) {
+        free(runner->fileFindResults[i]);
+    }
+    arrfree(runner->fileFindResults);
+    runner->fileFindResults = nullptr;
+    runner->fileFindPosition = 0;
+}
+
+static RValue builtin_file_find_first(VMContext* ctx, RValue* args, int32_t argCount) {
+    Runner* runner = ctx->runner;
+    FileSystem* fs = runner->fileSystem;
+
+    // A new search always replaces any previous one.
+    closeFileFindSession(runner);
+
+    if (1 > argCount) return RValue_makeOwnedString(safeStrdup(""));
+    // TODO: File Attributes!
+    const char* mask = (args[0].type == RVALUE_STRING ? args[0].string : "");
+
+    // Split the mask into a directory part and a wildcard pattern at the last separator.
+    char* maskCopy = safeStrdup(mask);
+    for (int i = 0; maskCopy[i] != '\0'; i++) {
+        if (maskCopy[i] == '\\') maskCopy[i] = '/';
+    }
+    char* lastSlash = strrchr(maskCopy, '/');
+    const char* dir;
+    const char* pattern;
+    if (lastSlash != nullptr) {
+        *lastSlash = '\0';
+        dir = maskCopy;
+        pattern = lastSlash + 1;
+    } else {
+        dir = "";
+        pattern = maskCopy;
+    }
+
+    FileSystemDirEntry* entries = fs->vtable->listDirectory(fs, dir);
+    repeat(arrlen(entries), i) {
+        if (matchWildcard(pattern, entries[i].name)) {
+            arrput(runner->fileFindResults, safeStrdup(entries[i].name));
+        }
+        free(entries[i].name);
+    }
+    arrfree(entries);
+    free(maskCopy);
+
+    if (0 >= arrlen(runner->fileFindResults)) return RValue_makeOwnedString(safeStrdup(""));
+    runner->fileFindPosition = 0;
+    return RValue_makeOwnedString(safeStrdup(runner->fileFindResults[0]));
+}
+
+static RValue builtin_file_find_next(VMContext* ctx, MAYBE_UNUSED RValue* args, MAYBE_UNUSED int32_t argCount) {
+    Runner* runner = ctx->runner;
+    runner->fileFindPosition++;
+    if (runner->fileFindPosition >= (int32_t) arrlen(runner->fileFindResults)) {
+        return RValue_makeOwnedString(safeStrdup(""));
+    }
+    return RValue_makeOwnedString(safeStrdup(runner->fileFindResults[runner->fileFindPosition]));
+}
+
+static RValue builtin_file_find_close(VMContext* ctx, MAYBE_UNUSED RValue* args, MAYBE_UNUSED int32_t argCount) {
+    closeFileFindSession(ctx->runner);
+    return RValue_makeUndefined();
+}
+
 // ===[ Binary File Functions ]===
 
 static int32_t findFreeBinaryFileSlot(Runner* runner) {
@@ -12427,6 +12521,9 @@ void VMBuiltins_registerAll(VMContext* ctx) {
     VM_registerBuiltin(ctx, "file_text_write_real", builtin_file_text_write_real);
     VM_registerBuiltin(ctx, "file_text_eof", builtin_file_text_eof);
     VM_registerBuiltin(ctx, "file_delete", builtin_file_delete);
+    VM_registerBuiltin(ctx, "file_find_first", builtin_file_find_first);
+    VM_registerBuiltin(ctx, "file_find_next", builtin_file_find_next);
+    VM_registerBuiltin(ctx, "file_find_close", builtin_file_find_close);
     VM_registerBuiltin(ctx, "file_text_read_string", builtin_file_text_read_string);
     VM_registerBuiltin(ctx, "file_text_read_real", builtin_file_text_read_real);
     VM_registerBuiltin(ctx, "file_text_readln", builtin_file_text_readln);
