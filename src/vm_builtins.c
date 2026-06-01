@@ -4181,6 +4181,22 @@ static RValue builtin_array_push(MAYBE_UNUSED VMContext* ctx, RValue* args, int3
     return RValue_makeUndefined();
 }
 
+// array_push(array) - pops a value from a array.
+static RValue builtin_array_pop(MAYBE_UNUSED VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeUndefined();
+    if (args[0].type != RVALUE_ARRAY || args[0].array == nullptr) return RValue_makeUndefined();
+    GMLArray* arr = args[0].array;
+    int32_t length = GMLArray_length1D(arr);
+    // "If the array is empty, undefined is returned."
+    if (length == 0) {
+        return RValue_makeUndefined();
+    }
+    RValue* value = GMLArray_slot(arr, length - 1);
+    // We are stealing the ownership, we don't need to increase the ref
+    arr->rows[0].length--;
+    return *value;
+}
+
 // array_insert(array, index, values...) - insert one or more values at "index", shifting the tail up. If "index" is past the end, fill the gap with real 0 (see the yyVariable.js for reference).
 static RValue builtin_array_insert(MAYBE_UNUSED VMContext* ctx, RValue* args, int32_t argCount) {
     if (2 > argCount) return RValue_makeUndefined();
@@ -12416,6 +12432,7 @@ void VMBuiltins_registerAll(VMContext* ctx) {
     VM_registerBuiltin(ctx, "array_get", builtin_array_get);
     VM_registerBuiltin(ctx, "array_set", builtin_array_set);
     VM_registerBuiltin(ctx, "array_push", builtin_array_push);
+    VM_registerBuiltin(ctx, "array_pop", builtin_array_pop);
     VM_registerBuiltin(ctx, "array_resize", builtin_array_resize);
     VM_registerBuiltin(ctx, "array_delete", builtin_array_delete);
     VM_registerBuiltin(ctx, "array_insert", builtin_array_insert);
