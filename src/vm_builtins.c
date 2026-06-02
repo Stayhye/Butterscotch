@@ -10197,6 +10197,15 @@ static RValue builtin_action_sprite_set(VMContext* ctx, RValue* args, MAYBE_UNUS
     return RValue_makeUndefined();
 }
 
+// action_sprite_color(color, alpha) - sets the calling instance's image_blend and image_alpha.
+static RValue builtin_action_sprite_color(VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
+    Instance* inst = ctx->currentInstance;
+    if (inst == nullptr) return RValue_makeUndefined();
+    inst->imageBlend = (uint32_t) RValue_toInt32(args[0]);
+    inst->imageAlpha = (float) RValue_toReal(args[1]);
+    return RValue_makeUndefined();
+}
+
 // action_message(text) - shows a dialog.
 static RValue builtin_action_message(MAYBE_UNUSED VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
     char* text = RValue_toString(args[0]);
@@ -13403,6 +13412,8 @@ void VMBuiltins_registerAll(VMContext* ctx) {
         VM_registerBuiltin(ctx, "action_if_question", builtin_action_if_question);
         VM_registerBuiltin(ctx, "action_draw_health", builtin_action_draw_health);
         VM_registerBuiltin(ctx, "action_sprite_set", builtin_action_sprite_set);
+        VM_registerBuiltin(ctx, "action_sprite_color", builtin_action_sprite_color);
+        VM_registerBuiltin(ctx, "action_sprite_colour", builtin_action_sprite_color);
         VM_registerBuiltin(ctx, "action_message", builtin_action_message);
         VM_registerBuiltin(ctx, "action_another_room", builtin_action_another_room);
         VM_registerBuiltin(ctx, "action_current_room", builtin_action_current_room);
