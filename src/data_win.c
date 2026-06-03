@@ -1414,7 +1414,7 @@ static void readRoomBackgrounds(BinaryReader* reader, Room* room) {
     free(bgPtrs);
 }
 
-static void readRoomViews(BinaryReader* reader, DataWin* dw, Room* room) {
+static void readRoomViews(BinaryReader* reader, Room* room) {
     uint32_t viewCount;
     uint32_t* viewPtrsArr = readPointerTable(reader, &viewCount);
     room->views = safeMalloc(8 * sizeof(RoomView));
@@ -1726,7 +1726,7 @@ static void readRoomPayload(BinaryReader* reader, DataWin* dw, Room* room) {
     readRoomBackgrounds(reader, room);
 
     BinaryReader_seek(reader, room->viewsFileOffset);
-    readRoomViews(reader, dw, room);
+    readRoomViews(reader, room);
 
     BinaryReader_seek(reader, room->gameObjectsFileOffset);
     readRoomGameObjects(reader, dw, room);
