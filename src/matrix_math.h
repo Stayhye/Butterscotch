@@ -143,6 +143,28 @@ static inline Matrix4f* Matrix4f_setTransform2D(Matrix4f* dest, float x, float y
     return dest;
 }
 
+// ===[ Camera View-Projection ]===
+
+// Builds the world -> clip (NDC) transform for a 2D camera that shows the room rectangle [left, left+width] x [top, top+height] in GameMaker's
+// Y-down coordinate space, optionally rotated by angleDeg counter-clockwise about the view center (matching GML view_angle).
+static inline Matrix4f* Matrix4f_viewProjection(Matrix4f* dest, float left, float top, float width, float height, float angleDeg) {
+    Matrix4f_identity(dest);
+    Matrix4f_ortho(dest, left, left + width, top + height, top, -1.0f, 1.0f);
+
+    if (angleDeg != 0.0f) {
+        // Rotate the world opposite the camera, about the view center, to spin the camera by angleDeg.
+        float cx = left + width * 0.5f;
+        float cy = top + height * 0.5f;
+        Matrix4f rot;
+        Matrix4f_identity(&rot);
+        Matrix4f_translate(&rot, cx, cy, 0.0f);
+        Matrix4f_rotateZ(&rot, -angleDeg * (float) M_PI / 180.0f);
+        Matrix4f_translate(&rot, -cx, -cy, 0.0f);
+        Matrix4f_multiply(dest, dest, &rot);
+    }
+    return dest;
+}
+
 // ===[ Transform Point ]===
 
 // Transform a 2D point (x, y) through the matrix (w=1), writing results to outX, outY

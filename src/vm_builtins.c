@@ -3236,6 +3236,21 @@ static RValue builtin_camera_get_default(VMContext* ctx, MAYBE_UNUSED RValue* ar
     return RValue_makeReal(runner->views[0].cameraId);
 }
 
+// camera_apply(camera): makes the camera's projection active on the current render target, so subsequent draws use that camera's view instead of the target's default projection.
+// Builds the world->clip matrix from the camera's scalars (custom view/proj matrices are alater stage).
+// The viewport is left untouched.
+static RValue builtin_camera_apply(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeUndefined();
+    Runner* runner = ctx->runner;
+    GMLCamera* camera = Runner_getCameraById(runner, RValue_toInt32(args[0]));
+    if (camera != nullptr) {
+        Matrix4f worldToClip;
+        Matrix4f_viewProjection(&worldToClip, (float) camera->viewX, (float) camera->viewY, (float) camera->viewWidth, (float) camera->viewHeight, camera->viewAngle);
+        runner->renderer->vtable->applyProjection(runner->renderer, &worldToClip);
+    }
+    return RValue_makeUndefined();
+}
+
 // ===[ VARIABLE FUNCTIONS ]===
 
 #ifdef ENABLE_VM_TRACING
@@ -12974,6 +12989,7 @@ void VMBuiltins_registerAll(VMContext* ctx) {
     VM_registerBuiltin(ctx, "view_set_camera", builtin_view_set_camera);
     VM_registerBuiltin(ctx, "camera_get_active", builtin_camera_get_active);
     VM_registerBuiltin(ctx, "camera_get_default", builtin_camera_get_default);
+    VM_registerBuiltin(ctx, "camera_apply", builtin_camera_apply);
 
     // Variables
     VM_registerBuiltin(ctx, "variable_global_exists", builtin_variable_global_exists);
