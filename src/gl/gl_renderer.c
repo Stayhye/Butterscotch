@@ -369,7 +369,7 @@ static void glBeginGUI(Renderer* renderer, int32_t guiW, int32_t guiH, int32_t p
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &boundFbo);
 
     int32_t glPortY;
-    if (boundFbo == 0) {
+    if ((GLint) gl->hostFramebuffer == boundFbo) {
         glPortY = 0;
         glViewport(0, 0, portW, portH);
         glScissor(0, 0, portW, portH);
@@ -403,11 +403,11 @@ static void glEndFrameInit(Renderer* renderer) {
     glBindVertexArray(0);
 
     if (renderer->runner->usingAppSurface && !renderer->runner->appSurfaceAutoDraw) {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, gl->hostFramebuffer);
         return;
     }
     int32_t appId = gl->base.runner->applicationSurfaceId;
-    GLCommon_beginLetterboxBlit(gl->surfaces[appId]);
+    GLCommon_beginLetterboxBlit(gl->surfaces[appId], gl->hostFramebuffer);
 }
 
 static void glEndFrameEnd(Renderer* renderer) {
@@ -417,7 +417,7 @@ static void glEndFrameEnd(Renderer* renderer) {
         return;
     }
     int32_t appId = gl->base.runner->applicationSurfaceId;
-    GLCommon_endLetterboxBlit(gl->surfaceWidth[appId], gl->surfaceHeight[appId], gl->gameW, gl->gameH, gl->windowW, gl->windowH);
+    GLCommon_endLetterboxBlit(gl->surfaceWidth[appId], gl->surfaceHeight[appId], gl->gameW, gl->gameH, gl->windowW, gl->windowH, gl->hostFramebuffer);
 }
 
 static void glRendererFlush(Renderer* renderer) {

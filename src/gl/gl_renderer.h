@@ -51,6 +51,8 @@ typedef struct {
     int32_t gameW; // game width (matches the application_surface size)
     int32_t gameH; // game height (matches the application_surface size)
 
+    GLuint hostFramebuffer; // present target for the composited frame, where 0 == the window
+
     // Original counts from data.win (dynamic slots start at these indices)
     uint32_t originalTexturePageCount;
     uint32_t originalTpagCount;

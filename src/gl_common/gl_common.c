@@ -27,16 +27,16 @@ void GLCommon_computeLetterbox(int32_t gameW, int32_t gameH, int32_t windowW, in
     *outEndY = startY + effH;
 }
 
-void GLCommon_beginLetterboxBlit(GLuint fbo) {
+void GLCommon_beginLetterboxBlit(GLuint fbo, GLuint hostFbo) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hostFbo);
 }
 
-void GLCommon_endLetterboxBlit(int32_t fboWidth, int32_t fboHeight, int32_t gameW, int32_t gameH, int32_t windowW, int32_t windowH) {
+void GLCommon_endLetterboxBlit(int32_t fboWidth, int32_t fboHeight, int32_t gameW, int32_t gameH, int32_t windowW, int32_t windowH, GLuint hostFbo) {
     int32_t sx, sy, ex, ey;
     GLCommon_computeLetterbox(gameW, gameH, windowW, windowH, &sx, &sy, &ex, &ey);
     glBlitFramebuffer(0, 0, fboWidth, fboHeight, sx, sy, ex, ey, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, hostFbo);
 }
 
 // ===[ Surface arrays ]===
