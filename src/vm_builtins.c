@@ -3044,6 +3044,106 @@ static RValue builtin_view_get_camera(VMContext* ctx, RValue* args, int32_t argC
     return RValue_makeReal(-1);
 }
 
+static RValue builtin_view_get_visible(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeBool(false);
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        return RValue_makeBool(runner->views[viewIndex].enabled);
+    }
+    return RValue_makeBool(false);
+}
+
+static RValue builtin_view_get_xport(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeReal(-1);
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        return RValue_makeReal(runner->views[viewIndex].portX);
+    }
+    return RValue_makeReal(-1);
+}
+
+static RValue builtin_view_get_yport(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeReal(-1);
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        return RValue_makeReal(runner->views[viewIndex].portY);
+    }
+    return RValue_makeReal(-1);
+}
+
+static RValue builtin_view_get_wport(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeReal(-1);
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        return RValue_makeReal(runner->views[viewIndex].portWidth);
+    }
+    return RValue_makeReal(-1);
+}
+
+static RValue builtin_view_get_hport(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeReal(-1);
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        return RValue_makeReal(runner->views[viewIndex].portHeight);
+    }
+    return RValue_makeReal(-1);
+}
+
+static RValue builtin_view_set_visible(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (2 > argCount) return RValue_makeUndefined();
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        runner->views[viewIndex].enabled = RValue_toBool(args[1]);
+    }
+    return RValue_makeUndefined();
+}
+
+static RValue builtin_view_set_xport(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (2 > argCount) return RValue_makeUndefined();
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        runner->views[viewIndex].portX = RValue_toInt32(args[1]);
+    }
+    return RValue_makeUndefined();
+}
+
+static RValue builtin_view_set_yport(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (2 > argCount) return RValue_makeUndefined();
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        runner->views[viewIndex].portY = RValue_toInt32(args[1]);
+    }
+    return RValue_makeUndefined();
+}
+
+static RValue builtin_view_set_wport(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (2 > argCount) return RValue_makeUndefined();
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        runner->views[viewIndex].portWidth = RValue_toInt32(args[1]);
+    }
+    return RValue_makeUndefined();
+}
+
+static RValue builtin_view_set_hport(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (2 > argCount) return RValue_makeUndefined();
+    Runner* runner = ctx->runner;
+    int32_t viewIndex = RValue_toInt32(args[0]);
+    if (viewIndex >= 0 && MAX_VIEWS > viewIndex) {
+        runner->views[viewIndex].portHeight = RValue_toInt32(args[1]);
+    }
+    return RValue_makeUndefined();
+}
+
 static RValue builtin_camera_get_view_x(VMContext* ctx, RValue* args, int32_t argCount) {
     if (1 > argCount) return RValue_makeReal(-1);
     Runner* runner = ctx->runner;
@@ -13472,6 +13572,16 @@ void VMBuiltins_registerAll(VMContext* ctx) {
 
     // GMS2 camera compatibility
     VM_registerBuiltin(ctx, "view_get_camera", builtin_view_get_camera);
+    VM_registerBuiltin(ctx, "view_get_visible", builtin_view_get_visible);
+    VM_registerBuiltin(ctx, "view_get_xport", builtin_view_get_xport);
+    VM_registerBuiltin(ctx, "view_get_yport", builtin_view_get_yport);
+    VM_registerBuiltin(ctx, "view_get_wport", builtin_view_get_wport);
+    VM_registerBuiltin(ctx, "view_get_hport", builtin_view_get_hport);
+    VM_registerBuiltin(ctx, "view_set_visible", builtin_view_set_visible);
+    VM_registerBuiltin(ctx, "view_set_xport", builtin_view_set_xport);
+    VM_registerBuiltin(ctx, "view_set_yport", builtin_view_set_yport);
+    VM_registerBuiltin(ctx, "view_set_wport", builtin_view_set_wport);
+    VM_registerBuiltin(ctx, "view_set_hport", builtin_view_set_hport);
     VM_registerBuiltin(ctx, "camera_get_view_x", builtin_camera_get_view_x);
     VM_registerBuiltin(ctx, "camera_get_view_y", builtin_camera_get_view_y);
     VM_registerBuiltin(ctx, "camera_get_view_width", builtin_camera_get_view_width);
