@@ -2249,6 +2249,27 @@ static RValue builtin_string_char_at(MAYBE_UNUSED VMContext* ctx, RValue* args, 
     return RValue_makeOwnedString(out);
 }
 
+static RValue builtin_string_ord_at(MAYBE_UNUSED VMContext* ctx, RValue* args, int32_t argCount) {
+    if (2 > argCount) return RValue_makeReal(-1.0);
+    char* str = RValue_toString(args[0]);
+    int32_t pos = RValue_toInt32(args[1]) - 1; // 1-based
+    int32_t strLen = (int32_t) strlen(str);
+    if (strLen == 0) {
+        free(str);
+        return RValue_makeReal(-1.0);
+    }
+    if (0 > pos) pos = 0; // native clamps negative indices to the first character
+    int32_t byteStart = TextUtils_utf8AdvanceCodepoints(str, strLen, pos);
+    if (byteStart >= strLen) {
+        free(str);
+        return RValue_makeReal(-1.0);
+    }
+    int32_t offset = byteStart;
+    uint16_t codepoint = TextUtils_decodeUtf8(str, strLen, &offset);
+    free(str);
+    return RValue_makeReal((GMLReal) codepoint);
+}
+
 static RValue builtin_string_delete(MAYBE_UNUSED VMContext* ctx, RValue* args, int32_t argCount) {
     if (3 > argCount) return RValue_makeOwnedString(safeStrdup(""));
     char* str = RValue_toString(args[0]);
@@ -14157,6 +14178,7 @@ void VMBuiltins_registerAll(VMContext* ctx) {
     VM_registerBuiltin(ctx, "string_copy", builtin_string_copy);
     VM_registerBuiltin(ctx, "string_pos", builtin_string_pos);
     VM_registerBuiltin(ctx, "string_char_at", builtin_string_char_at);
+    VM_registerBuiltin(ctx, "string_ord_at", builtin_string_ord_at);
     VM_registerBuiltin(ctx, "string_split", builtin_string_split);
     VM_registerBuiltin(ctx, "string_delete", builtin_string_delete);
     VM_registerBuiltin(ctx, "string_insert", builtin_string_insert);
