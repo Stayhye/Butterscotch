@@ -205,9 +205,9 @@ bool platformInit(int32_t reqW, int32_t reqH, const char *title, bool headless) 
         fseek(f, 0, SEEK_SET);
         char* buffer = (char*) malloc(len + 1);
         if (buffer != NULL) {
-            fread(buffer, 1, len, f);
+            safeFread(buffer, len, f, dbPath);
             buffer[len] = '\0';
-            if (buffer != NULL && buffer[0] != '\0') {
+            if (buffer[0] != '\0') {
                 if (glfwUpdateGamepadMappings(buffer)) {
                     fprintf(stderr, "Gamepad: Loaded SDL gamecontroller mappings successfully\n");
                 } else {

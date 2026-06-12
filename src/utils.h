@@ -103,6 +103,15 @@ _val; \
     _ptr; \
 })
 
+// Reads exactly n bytes or aborts with the "pathForError" that caused the error.
+#define safeFread(dst, n, file, pathForError) ({ \
+    size_t _want = (size_t)(n); \
+    if (fread((dst), 1, _want, (file)) != _want) { \
+        fprintf(stderr, "FATAL: failed to read %zu bytes from %s at %s:%d\n", _want, (pathForError), __FILE__, __LINE__); \
+        abort(); \
+    } \
+})
+
 #define safeStrdup(str) ({ \
     char* _ptr = strdup(str); \
     if (_ptr == nullptr) { \

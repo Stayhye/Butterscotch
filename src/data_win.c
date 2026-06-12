@@ -2428,7 +2428,7 @@ DataWin* DataWin_parse(const char* filePath, DataWinParserOptions options) {
     uint8_t* wholeFileData = nullptr;
     if (options.loadType == DATAWINLOADTYPE_LOAD_IN_MEMORY_AHEAD_OF_TIME) {
         wholeFileData = safeMalloc((size_t) fileSize);
-        fread(wholeFileData, 1, (size_t) fileSize, file);
+        safeFread(wholeFileData, fileSize, file, filePath);
         BinaryReader_setBuffer(&reader, wholeFileData, 0, (size_t) fileSize);
     }
 
