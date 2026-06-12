@@ -633,6 +633,7 @@ static void glEndFrameEnd(Renderer* renderer) {
         return;
     }
     int32_t appId = gl->base.runner->applicationSurfaceId;
+    GLCommon_beginLetterboxBlit(gl->surfaces[appId], gl->hostFramebuffer);
     GLCommon_endLetterboxBlit(gl->surfaceWidth[appId], gl->surfaceHeight[appId], gl->gameW, gl->gameH, gl->windowW, gl->windowH, gl->hostFramebuffer);
 }
 
