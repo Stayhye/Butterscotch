@@ -284,6 +284,19 @@ static void storeIntoArraySlot(RValue* slot, RValue val) {
     }
 }
 
+// CoW fork for array writes (BC17+): when the slot's array is owned by a different scope, replace it with a uniquely-owned clone stamped with the current owner,
+// so the upcoming store (Pop for one dimensional arrays, or the chain's eventual BREAK_POPAF for multi-dimensional arrays) can write in place.
+// Essentially "If we don't own this array, copy it and decrease the reference count of the original array".
+// (See GameMaker-HTML5's "__yy_gml_array_check" / "__yy_gml_array_check_index_chain").
+static void cowForkSlotForWriteIfNeeded(VMContext* ctx, RValue* slot) {
+    GMLArray* arr = slot->array;
+    if (arr->owner == ctx->currentArrayOwner) return;
+    GMLArray* clone = GMLArray_clone(arr, ctx->currentArrayOwner);
+    GMLArray_decRef(arr);
+    slot->array = clone;
+    slot->ownsReference = true;
+}
+
 // Write array[index] = val with CoW semantics. Always makes an independent copy of val, caller retains ownership and must RValue_free(&val) when done.
 // `slot` is the RValue* holding the array (e.g. &globalVars[id], &inst->selfVars[..].value, &localVars[slot]).
 // Returns the (possibly newly-forked) GMLArray* now in *slot.
@@ -312,16 +325,10 @@ static GMLArray* VM_arrayWriteAt(VMContext* ctx, RValue* slot, int32_t index, RV
     GMLArray* arr = slot->array;
 
     // Case 2: CoW fork check.
-    bool needFork;
-#if IS_WAD17_OR_HIGHER_ENABLED
     if (IS_WAD17_OR_HIGHER(ctx)) {
-        needFork = (arr->owner != ctx->currentArrayOwner);
-    } else
-#endif
-    {
-        needFork = (arr->refCount > 1 && arr->owner != (void*) slot);
-    }
-    if (needFork) {
+        cowForkSlotForWriteIfNeeded(ctx, slot);
+        arr = slot->array;
+    } else if (arr->refCount > 1 && arr->owner != (void*) slot) {
         GMLArray* clone = GMLArray_clone(arr, intendedOwner);
         GMLArray_decRef(arr);
         slot->array = clone;
@@ -1327,12 +1334,15 @@ static void handlePush(VMContext* ctx, uint32_t instr, const uint8_t* extraData,
                     }
                 }
 
+                bool forWrite = (varType == VARTYPE_ARRAYPOPAF);
                 // Materialise the top-level array in the slot if needed.
                 if (slot->type != RVALUE_ARRAY || slot->array == nullptr) {
                     RValue_free(slot);
                     GMLArray* fresh = GMLArray_create(0);
                     fresh->owner = IS_WAD17_OR_HIGHER(ctx) ? ctx->currentArrayOwner : (void*) slot;
                     *slot = RValue_makeArray(fresh);
+                } else if (forWrite) {
+                    cowForkSlotForWriteIfNeeded(ctx, slot);
                 }
                 GMLArray* top = slot->array;
                 GMLArray_growTo(top, firstIndex + 1);
@@ -1343,6 +1353,8 @@ static void handlePush(VMContext* ctx, uint32_t instr, const uint8_t* extraData,
                     GMLArray* sub = GMLArray_create(0);
                     sub->owner = top->owner;
                     *topSlot = RValue_makeArray(sub);
+                } else if (forWrite) {
+                    cowForkSlotForWriteIfNeeded(ctx, topSlot);
                 }
                 // Push a weak ref to the sub-array — short-lived, consumed by the next BREAK op.
                 stackPush(ctx, RValue_makeArrayWeak(topSlot->array));
@@ -1377,12 +1389,15 @@ static void handlePush(VMContext* ctx, uint32_t instr, const uint8_t* extraData,
 // For V17+ VARTYPE_ARRAYPUSHAF/POPAF on a top-level variable: return the slot's GMLArray*,
 // materialising a fresh empty one in the slot if it isn't an array yet. Used by PushLoc/Glb/Bltn.
 // Pushes a weak ref onto the stack — short-lived, consumed by the next BREAK_PUSHAC/PUSHAF/POPAF.
-static void pushTopLevelArrayRef(VMContext* ctx, RValue* slot) {
+// forWrite (VARTYPE_ARRAYPOPAF) chains end in a BREAK_POPAF store, so the slot must be CoW-forked up front.
+static void pushTopLevelArrayRef(VMContext* ctx, RValue* slot, bool forWrite) {
     if (slot->type != RVALUE_ARRAY || slot->array == nullptr) {
         RValue_free(slot);
         GMLArray* fresh = GMLArray_create(0);
         fresh->owner = IS_WAD17_OR_HIGHER(ctx) ? ctx->currentArrayOwner : (void*) slot;
         *slot = RValue_makeArray(fresh);
+    } else if (forWrite) {
+        cowForkSlotForWriteIfNeeded(ctx, slot);
     }
     stackPush(ctx, RValue_makeArrayWeak(slot->array));
 }
@@ -1410,7 +1425,7 @@ static void handlePushBltn(VMContext* ctx, uint32_t instr, const uint8_t* extraD
             abort();
         }
         RValue* slot = IntRValueHashMap_getOrInsertUndefined(&inst->selfVars, varDef->varID);
-        pushTopLevelArrayRef(ctx, slot);
+        pushTopLevelArrayRef(ctx, slot, varType == VARTYPE_ARRAYPOPAF);
         return;
     }
 #endif
@@ -2762,7 +2777,7 @@ static void handleBreakPopAF(VMContext* ctx) {
     RValue value = stackPop(ctx);
     if (arrayRef.type == RVALUE_ARRAY && arrayRef.array != nullptr && idx >= 0) {
         GMLArray* arr = arrayRef.array;
-        requireMessage(arr->refCount == 1 || arr->owner == ctx->currentArrayOwner, "BREAK_POPAF: Writing through shared/aliased array without prior CoW fork");
+        requireMessageFormatted(__FILE__, __LINE__, arr->refCount == 1 || arr->owner == ctx->currentArrayOwner, "BREAK_POPAF: Writing through shared/aliased array without prior CoW fork in %s: arr=%p refCount=%d owner=%p currentArrayOwner=%p idx=%d", ctx->currentCodeName, (void*) arr, arr->refCount, arr->owner, ctx->currentArrayOwner, idx);
         GMLArray_growTo(arr, idx + 1);
         storeIntoArraySlot(GMLArray_slot(arr, idx), value);
     }
@@ -2784,8 +2799,10 @@ static void handleBreakPushAC(VMContext* ctx, uint32_t instrAddr) {
     if (parentSlot->type != RVALUE_ARRAY || parentSlot->array == nullptr) {
         RValue_free(parentSlot);
         GMLArray* sub = GMLArray_create(0);
-        sub->owner = parent->owner;
+        sub->owner = ctx->currentArrayOwner;
         *parentSlot = RValue_makeArray(sub);
+    } else {
+        cowForkSlotForWriteIfNeeded(ctx, parentSlot);
     }
     stackPush(ctx, RValue_makeArrayWeak(parentSlot->array));
     RValue_free(&arrayRef);
@@ -3037,7 +3054,7 @@ static RValue executeLoop(VMContext* ctx) {
                     Variable* varDef = resolveVarDef(ctx, varRef);
                     uint32_t localSlot = resolveLocalSlot(ctx, varDef->varID);
                     require(ctx->localVarCount > localSlot);
-                    pushTopLevelArrayRef(ctx, &ctx->localVars[localSlot]);
+                    pushTopLevelArrayRef(ctx, &ctx->localVars[localSlot], varType == VARTYPE_ARRAYPOPAF);
                     break;
                 }
 #endif
