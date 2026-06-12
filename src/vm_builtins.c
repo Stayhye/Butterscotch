@@ -12250,31 +12250,25 @@ static RValue builtin_tilemap_get_y(VMContext* ctx, RValue* args, MAYBE_UNUSED i
     return RValue_makeReal((GMLReal) runtimeLayer->yOffset);
 }
 
-// tilemap_get_at_pixel(tilemapElementId, x, y): returns the raw tile cell value (index + mirror/flip/rotate bits) at the given room-space pixel coordinate, or -1 if the coordinate falls outside the tilemap.
-// (see GameMaker-HTML5 Function_Layers.js)
-static RValue builtin_tilemap_get_at_pixel(VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
-    if (3 > argCount) return RValue_makeReal(-1.0);
-    Runner* runner = ctx->runner;
-    RuntimeLayer* runtimeLayer = nullptr;
-    RoomLayerTilesData* data = findTilemapData(runner, RValue_toInt32(args[0]), &runtimeLayer);
-    requireNotNullMessage(runtimeLayer, "Missing Runtime Layer! Bug?");
+// Maps a room-space pixel coordinate to a flat tileData cell index, applying the owning layer's draw offset.
+// Returns -1 when the tilemap/tileset is invalid or the coordinate falls outside the tilemap.
+static int32_t tilemapGetCellIndexAtPixel(DataWin* dw, RoomLayerTilesData* data, RuntimeLayer* runtimeLayer, GMLReal findX, GMLReal findY, Background** outTileset) {
+    if (data == nullptr || data->tileData == nullptr) return -1;
+    if (0 > data->backgroundIndex) return -1;
 
-    if (data == nullptr || data->tileData == nullptr) return RValue_makeReal(-1.0);
-    if (0 > data->backgroundIndex) return RValue_makeReal(-1.0);
-
-    DataWin* dw = runner->dataWin;
-    if ((uint32_t) data->backgroundIndex >= dw->bgnd.count) return RValue_makeReal(-1.0);
+    if ((uint32_t) data->backgroundIndex >= dw->bgnd.count) return -1;
 
     Background* tileset = &dw->bgnd.backgrounds[data->backgroundIndex];
+    if (outTileset != nullptr) *outTileset = tileset;
     uint32_t tileW = tileset->gms2TileWidth;
     uint32_t tileH = tileset->gms2TileHeight;
-    if (tileW == 0 || tileH == 0) return RValue_makeReal(-1.0);
+    if (tileW == 0 || tileH == 0) return -1;
 
     float offsetX = runtimeLayer->xOffset; // GameMaker-HTML5: m_x
     float offsetY = runtimeLayer->yOffset; // GameMaker-HTML5: m_y
 
-    GMLReal x = RValue_toReal(args[1]) - (GMLReal) offsetX;
-    GMLReal y = RValue_toReal(args[2]) - (GMLReal) offsetY;
+    GMLReal x = findX - (GMLReal) offsetX;
+    GMLReal y = findY - (GMLReal) offsetY;
 
     GMLReal mapPixelW = (GMLReal) (data->tilesX * tileW);
     GMLReal mapPixelH = (GMLReal) (data->tilesY * tileH);
@@ -12285,7 +12279,7 @@ static RValue builtin_tilemap_get_at_pixel(VMContext* ctx, RValue* args, MAYBE_U
     // if(y>tmph)
     //    return -1;
     // The ORIGINAL runner uses >= for both
-    if (0.0 > x || 0.0 > y || x >= mapPixelW || y >= mapPixelH) return RValue_makeReal(-1.0);
+    if (0.0 > x || 0.0 > y || x >= mapPixelW || y >= mapPixelH) return -1;
 
     int32_t indexX = (int32_t) GMLReal_floor(x / (GMLReal) tileW);
     int32_t indexY = (int32_t) GMLReal_floor(y / (GMLReal) tileH);
@@ -12294,8 +12288,47 @@ static RValue builtin_tilemap_get_at_pixel(VMContext* ctx, RValue* args, MAYBE_U
     if (indexX >= (int32_t) data->tilesX) indexX = (int32_t) data->tilesX - 1;
     if (indexY >= (int32_t) data->tilesY) indexY = (int32_t) data->tilesY - 1;
 
-    uint32_t cell = data->tileData[indexY * data->tilesX + indexX];
+    return indexY * ((int32_t) data->tilesX) + indexX;
+}
+
+// tilemap_get_at_pixel(tilemapElementId, x, y): returns the raw tile cell value (index + mirror/flip/rotate bits) at the given room-space pixel coordinate, or -1 if the coordinate falls outside the tilemap.
+// (see GameMaker-HTML5 Function_Layers.js)
+static RValue builtin_tilemap_get_at_pixel(VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
+    if (3 > argCount) return RValue_makeReal(-1.0);
+    Runner* runner = ctx->runner;
+    RuntimeLayer* runtimeLayer = nullptr;
+    RoomLayerTilesData* data = findTilemapData(runner, RValue_toInt32(args[0]), &runtimeLayer);
+    requireNotNullMessage(runtimeLayer, "Missing Runtime Layer! Bug?");
+
+    int32_t cellIndex = tilemapGetCellIndexAtPixel(ctx->dataWin, data, runtimeLayer, RValue_toReal(args[1]), RValue_toReal(args[2]), nullptr);
+    if (0 > cellIndex) return RValue_makeReal(-1.0);
+
+    uint32_t cell = data->tileData[cellIndex];
     return RValue_makeReal((GMLReal) cell);
+}
+
+// tilemap_set_at_pixel(tilemapElementId, tiledata, x, y): writes the raw tile cell value at the given room-space pixel coordinate. Returns whether the write happened.
+// (see GameMaker-HTML5 Function_Layers.js)
+static RValue builtin_tilemap_set_at_pixel(VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
+    if (4 > argCount) return RValue_makeBool(false);
+    Runner* runner = ctx->runner;
+    RuntimeLayer* runtimeLayer = nullptr;
+    RoomLayerTilesData* data = findTilemapData(runner, RValue_toInt32(args[0]), &runtimeLayer);
+    requireNotNullMessage(runtimeLayer, "Missing Runtime Layer! Bug?");
+
+    Background* tileset = nullptr;
+    int32_t cellIndex = tilemapGetCellIndexAtPixel(ctx->dataWin, data, runtimeLayer, RValue_toReal(args[2]), RValue_toReal(args[3]), &tileset);
+    if (0 > cellIndex) return RValue_makeBool(false);
+
+    uint32_t cell = (uint32_t) RValue_toInt32(args[1]);
+    uint32_t tileIndex = cell & 0x7ffff;
+    if (tileset->gms2TileCount != 0 && tileIndex >= tileset->gms2TileCount) {
+        fprintf(stderr, "VM: [%s] tilemap_set_at_pixel() - tile index outside tile set count\n", ctx->currentCodeName);
+        return RValue_makeBool(false);
+    }
+
+    data->tileData[cellIndex] = cell;
+    return RValue_makeBool(true);
 }
 
 // tilemap_get_tileset(tilemapElementId): returns the BGND (tileset) index backing the tilemap, or -1.
@@ -12312,6 +12345,13 @@ static RValue builtin_tilemap_get_tileset(VMContext* ctx, RValue* args, MAYBE_UN
 static RValue builtin_tile_get_index(MAYBE_UNUSED VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
     if (1 > argCount) return RValue_makeReal(-1.0);
     return RValue_makeReal((GMLReal) (RValue_toInt32(args[0]) & 0x7ffff));
+}
+
+// tile_set_empty(tiledata): clears the tileset cell index from a raw tile cell value, keeping the mirror/flip/rotate bits.
+// (see GameMaker-HTML5 Function_Layers.js tile_set_empty)
+static RValue builtin_tile_set_empty(MAYBE_UNUSED VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
+    if (1 > argCount) return RValue_makeReal(-1.0);
+    return RValue_makeReal((GMLReal) (RValue_toInt32(args[0]) & ~0x7ffff));
 }
 
 static RValue builtin_layer_get_all(VMContext* ctx, MAYBE_UNUSED RValue* args, MAYBE_UNUSED int32_t argCount) {
@@ -14916,6 +14956,8 @@ void VMBuiltins_registerAll(VMContext* ctx) {
     VM_registerBuiltin(ctx, "tilemap_get_at_pixel", builtin_tilemap_get_at_pixel);
     VM_registerBuiltin(ctx, "tilemap_get_tileset", builtin_tilemap_get_tileset);
     VM_registerBuiltin(ctx, "tile_get_index", builtin_tile_get_index);
+    VM_registerBuiltin(ctx, "tile_set_empty", builtin_tile_set_empty);
+    VM_registerBuiltin(ctx, "tilemap_set_at_pixel", builtin_tilemap_set_at_pixel);
 #endif
     VM_registerBuiltin(ctx, "layer_create", builtin_layer_create);
     VM_registerBuiltin(ctx, "layer_destroy", builtin_layer_destroy);
