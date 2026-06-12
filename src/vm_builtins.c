@@ -887,6 +887,7 @@ RValue VMBuiltins_getVariable(VMContext* ctx, Instance* inst, int16_t builtinVar
                 case BUILTIN_VAR_CURRENT_SECOND:  return RValue_makeReal(t->tm_sec);
                 case BUILTIN_VAR_CURRENT_WEEKDAY: return RValue_makeReal(t->tm_wday);
                 case BUILTIN_VAR_CURRENT_YEAR:    return RValue_makeReal(t->tm_year + 1900);
+                default: abort(); // Should never happen
             }
         }
         case BUILTIN_VAR_CURRENT_TIME:
@@ -7925,13 +7926,18 @@ static RValue builtin_buffer_save_ext(MAYBE_UNUSED VMContext* ctx, RValue* args,
     int32_t id = RValue_toInt32(args[0]);
     char* filename = RValue_toString(args[1]);
     int32_t offset = RValue_toInt32(args[2]);
-    size_t size = RValue_toInt32(args[3]);
+    int32_t size = RValue_toInt32(args[3]);
     GmlBuffer* buf = gmlBufferGet(runner, id);
 
-    if (buf != nullptr && size > 0 && offset >= 0) {
+    if (buf != nullptr) {
         int32_t maxBoundary = (buf->type == GML_BUFFER_GROW) ? buf->usedSize : buf->size;
 
-        if (offset < maxBoundary) {
+        // These are checks that the original runner does
+        if (0 > offset) offset = 0;
+        if (0 > size) size = maxBoundary;
+        if (offset + size > maxBoundary) size = maxBoundary - offset;
+
+        if (maxBoundary > offset) {
             if (offset + size > maxBoundary) {
                 size = maxBoundary - offset;
             }

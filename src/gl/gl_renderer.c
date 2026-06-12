@@ -2067,7 +2067,7 @@ static bool glTextureGetUVs(Renderer* renderer, uint32_t texHandle, float* outUV
 static bool glShaderIsCompiled(Renderer* renderer, int32_t shaderID) {
     GLRenderer* gl = (GLRenderer*) renderer;
     DataWin* dw = gl->base.dataWin;
-    if (0 > shaderID || shaderID >= dw->shdr.count) return false;
+    if (0 > shaderID || (uint32_t) shaderID >= dw->shdr.count) return false;
     return gl->gmlShaderCompiled[shaderID];
 }
 

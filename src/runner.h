@@ -481,8 +481,8 @@ struct Runner {
     SavedRoomState* savedRoomStates; // array of size dataWin->room.count, for persistent room support
     int32_t viewCurrent; // index of the view currently being drawn (for view_current)
     bool viewsEnabled;   // runtime-mutable global view system toggle (view_enabled); seeded from room->flags & 1 on room enter
-    int32_t renderGameW; // FBO width used by the last frame (= max port bound), 0 if not yet rendered
-    int32_t renderGameH; // FBO height used by the last frame (= max port bound), 0 if not yet rendered
+    uint32_t renderGameW; // FBO width used by the last frame (= max port bound), 0 if not yet rendered
+    uint32_t renderGameH; // FBO height used by the last frame (= max port bound), 0 if not yet rendered
     int32_t viewportX;   // X offset in window (letterboxing)
     int32_t viewportY;   // Y offset in window (letterboxing)
     int32_t viewportW;   // Scaled game width in window
