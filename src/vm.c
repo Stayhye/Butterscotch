@@ -3806,21 +3806,7 @@ RValue VM_callCodeIndex(VMContext* ctx, int32_t codeIndex, RValue* args, int32_t
     ctx->scriptArgCount = argCount;
     if (argCount > 0 && args != nullptr) {
         repeat(argCount, argIdx) {
-            RValue argCopy = args[argIdx];
-            if (argCopy.type == RVALUE_STRING && argCopy.ownsReference && argCopy.string != nullptr) {
-                argCopy.string = safeStrdup(argCopy.string);
-            } else if (argCopy.type == RVALUE_ARRAY && argCopy.array != nullptr) {
-                GMLArray_incRef(argCopy.array);
-                argCopy.ownsReference = true;
-#if IS_WAD17_OR_HIGHER_ENABLED
-            } else if (argCopy.type == RVALUE_METHOD && argCopy.method != nullptr) {
-                GMLMethod_incRef(argCopy.method);
-                argCopy.ownsReference = true;
-#endif
-            } else if (argCopy.type == RVALUE_STRUCT && argCopy.structInst != nullptr) {
-                Instance_structIncRef(argCopy.structInst);
-                argCopy.ownsReference = true;
-            }
+            RValue argCopy = RValue_makeIndependent(args[argIdx]);
             ctx->scriptArgs[argIdx] = argCopy;
         }
     }
