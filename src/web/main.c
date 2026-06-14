@@ -285,7 +285,7 @@ void startRunner(const char* gamePath, const char* savesPath) {
     OverlayFileSystem* overlayFs = OverlayFileSystem_create(bundleDir, savesPath);
     free(bundleDir);
 
-    gWebAudio = WebAudioSystem_create(gAudioSampleRate);
+    gWebAudio = WebAudioSystem_create(dataWin, gAudioSampleRate);
     AudioSystem* audioSystem = (AudioSystem*) gWebAudio;
 
     // Initialize the runner
