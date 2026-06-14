@@ -110,7 +110,9 @@ typedef struct {
     int32_t (*createSurface)(Renderer* renderer, int32_t width, int32_t height);
     bool (*surfaceExists)(Renderer* renderer, int32_t surfaceID);
     // Bind the given surface as the active render target. Pass renderer->runner->applicationSurfaceId to bind the application surface.
-    bool (*setRenderTarget)(Renderer* renderer, int32_t surfaceID);
+    // implicitApplicationSurface is only valid if the surfaceID is the runner->applicationSurfaceId, it means that it was implicitly set (example: stack was empty) instead of explicitly (example: GML code using surface_set_target(application_surface))
+    // The idea is that when implicitApplicationSurface is set AND the surfaceId is runner->applicationSurfaceId, you MUST restore the previousViewMatrix
+    bool (*setRenderTarget)(Renderer* renderer, int32_t surfaceID, bool implicitApplicationSurface);
     // Lazy allocation hook called every frame by Runner_beginFrame.
     // Creates the application_surface on the first frame (and after application_surface_enable(false) -> true cycles).
     // Resizes in place if the requested dimensions changed.

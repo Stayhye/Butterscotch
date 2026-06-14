@@ -2692,10 +2692,10 @@ static int32_t gsEnsureApplicationSurface(MAYBE_UNUSED Renderer* renderer, MAYBE
     return APPLICATION_SURFACE_ID;
 }
 
-static bool gsSetRenderTarget(Renderer* renderer, int32_t surfaceID) {
+static bool gsSetRenderTarget(Renderer* renderer, int32_t surfaceID, bool implicitApplicationSurface) {
     GsRenderer* gs = (GsRenderer*) renderer;
 
-    if (surfaceID == APPLICATION_SURFACE_ID) {
+    if (surfaceID == APPLICATION_SURFACE_ID && implicitApplicationSurface) {
         if (gs->currentSurface == -1) return true; // already on the main FB
         bool wasPhantom = gs->surfaces[gs->currentSurface].chunkCount == 0;
         if (wasPhantom) {
@@ -2887,7 +2887,7 @@ static void gsSurfaceFree(Renderer* renderer, int32_t surfaceID) {
     if (gs->currentSurface == surfaceID) {
         // Caller is freeing the surface while it's still bound as target. Pop back to the main FB first to keep gsGlobal coherent.
         rendererPrintf("GsRenderer: surface_free %d while bound; auto-popping to main FB\n", surfaceID);
-        gsSetRenderTarget(renderer, APPLICATION_SURFACE_ID);
+        gsSetRenderTarget(renderer, APPLICATION_SURFACE_ID, true);
     }
 
     Surface* s = &gs->surfaces[surfaceID];

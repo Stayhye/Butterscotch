@@ -1699,7 +1699,7 @@ static bool glSurfaceGetPixels(Renderer* renderer, int32_t surfaceId, uint8_t* o
     return GLCommon_surfaceGetPixels(gl->surfaces, gl->surfaceWidth, gl->surfaceHeight, gl->surfaceCount, surfaceId, outRGBA);
 }
 
-static bool glSetRenderTarget(Renderer* renderer, int32_t surfaceId) {
+static bool glSetRenderTarget(Renderer* renderer, int32_t surfaceId, bool implicitApplicationSurface) {
     GLRenderer* gl = (GLRenderer*) renderer;
 
     if (0 > surfaceId || (uint32_t) surfaceId >= gl->surfaceCount) return false;
@@ -1707,8 +1707,7 @@ static bool glSetRenderTarget(Renderer* renderer, int32_t surfaceId) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, gl->surfaces[surfaceId]);
 
-
-    if (surfaceId == renderer->runner->applicationSurfaceId) {
+    if (surfaceId == renderer->runner->applicationSurfaceId && implicitApplicationSurface) {
         glViewport(gl->base.CPortX, gl->base.CPortY, gl->base.CPortW, gl->base.CPortH);
         glEnable(GL_SCISSOR_TEST);
         renderer->gmlMatrices[MATRIX_WORLD_VIEW_PROJECTION] = renderer->previousViewMatrix;
@@ -1724,7 +1723,6 @@ static bool glSetRenderTarget(Renderer* renderer, int32_t surfaceId) {
     glDisable(GL_SCISSOR_TEST);
     renderer->gmlMatrices[MATRIX_WORLD_VIEW_PROJECTION] = projection;
     glShaderSettingsRefresh(renderer);
-
 
     return true;
 }

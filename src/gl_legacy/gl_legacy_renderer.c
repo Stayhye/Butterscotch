@@ -1490,7 +1490,7 @@ static void glLegacySurfaceFree(Renderer* renderer, int32_t surfaceId) {
     fprintf(stderr, "GL: Freed Surface %d\n", surfaceId);
 }
 
-static bool glLegacySetRenderTarget(Renderer* renderer, int32_t surfaceId) {
+static bool glLegacySetRenderTarget(Renderer* renderer, int32_t surfaceId, bool implicitApplicationSurface) {
     GLLegacyRenderer* gl = (GLLegacyRenderer*) renderer;
 
     if (0 > surfaceId || (uint32_t) surfaceId >= gl->surfaceCount) return false;
@@ -1498,7 +1498,7 @@ static bool glLegacySetRenderTarget(Renderer* renderer, int32_t surfaceId) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, gl->surfaces[surfaceId]);
 
-    if (surfaceId == renderer->runner->applicationSurfaceId) {
+    if (surfaceId == renderer->runner->applicationSurfaceId && implicitApplicationSurface) {
         glViewport(gl->base.CPortX, gl->base.CPortY, gl->base.CPortW, gl->base.CPortH);
         glMatrixMode(GL_PROJECTION);
         glLoadMatrixf(renderer->previousViewMatrix.m);

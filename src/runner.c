@@ -3811,7 +3811,7 @@ bool Runner_surfaceSetTarget(Runner* runner, int32_t surfaceID) {
 
     runner->surfaceStack[slot] = surfaceID;
     runner->renderer->vtable->flush(runner->renderer);
-    return runner->renderer->vtable->setRenderTarget(runner->renderer, surfaceID);
+    return runner->renderer->vtable->setRenderTarget(runner->renderer, surfaceID, false);
 }
 
 bool Runner_surfaceResetTarget(Runner* runner) {
@@ -3825,7 +3825,7 @@ bool Runner_surfaceResetTarget(Runner* runner) {
 
     int32_t newTop = findStackTop(runner);
     int32_t newTarget = newTop == -1 ? runner->applicationSurfaceId : runner->surfaceStack[newTop];
-    runner->renderer->vtable->setRenderTarget(runner->renderer, newTarget);
+    runner->renderer->vtable->setRenderTarget(runner->renderer, newTarget, newTop == -1);
     if (newTop == -1 && runner->inGuiPass) {
         // Inside Pre Draw / Post Draw / Draw GUI the base target is the GUI pass target with the GUI projection, not the room view.
         // (See GameMaker-HTML5's g_InGUI_Zone)
