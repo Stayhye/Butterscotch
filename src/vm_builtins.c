@@ -15021,10 +15021,12 @@ void VMBuiltins_registerAll(VMContext* ctx) {
     VM_registerBuiltin(ctx, "audio_master_gain", builtin_audio_master_gain);
     VM_registerBuiltin(ctx, "audio_group_load", builtin_audio_group_load);
     VM_registerBuiltin(ctx, "audio_group_is_loaded", builtin_audio_group_is_loaded);
-    VM_registerBuiltin(ctx, "audio_play_music", builtin_audio_play_music);
-    VM_registerBuiltin(ctx, "audio_stop_music", builtin_audio_stop_music);
-    VM_registerBuiltin(ctx, "audio_music_gain", builtin_audio_music_gain);
-    VM_registerBuiltin(ctx, "audio_music_is_playing", builtin_audio_music_is_playing);
+    if (!isGMS2) {
+        VM_registerBuiltin(ctx, "audio_play_music", builtin_audio_play_music);
+        VM_registerBuiltin(ctx, "audio_stop_music", builtin_audio_stop_music);
+        VM_registerBuiltin(ctx, "audio_music_gain", builtin_audio_music_gain);
+        VM_registerBuiltin(ctx, "audio_music_is_playing", builtin_audio_music_is_playing);
+    }
     VM_registerBuiltin(ctx, "audio_pause_sound", builtin_audio_pause_sound);
     VM_registerBuiltin(ctx, "audio_resume_sound", builtin_audio_resume_sound);
     VM_registerBuiltin(ctx, "audio_pause_all", builtin_audio_pause_all);
