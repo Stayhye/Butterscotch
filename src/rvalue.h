@@ -53,6 +53,7 @@ typedef enum {
 } AssetRefType;
 
 // ===[ RValue - Tagged Union ]===
+// When adding new elements to here, don't forget to update the "typeof" builtin!
 typedef enum {
     RVALUE_UNDEFINED = 0,
     RVALUE_STRING = 1,

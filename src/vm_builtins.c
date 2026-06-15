@@ -2024,6 +2024,27 @@ static RValue builtin_is_callable(MAYBE_UNUSED VMContext* ctx, RValue* args, int
 
     return RValue_makeBool(false);
 }
+
+static RValue builtin_typeof(MAYBE_UNUSED VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeUndefined();
+
+    RValue arg = args[0];
+
+    switch (arg.type) {
+        // TODO: RVALUE_POINTER, RVALUE_NULL
+        case RVALUE_REAL: return RValue_makeString("number");
+        case RVALUE_STRING: return RValue_makeString("string");
+        case RVALUE_ARRAY: return RValue_makeString("array");
+        case RVALUE_BOOL: return RValue_makeString("bool");
+        case RVALUE_INT32: return RValue_makeString("int32");
+        case RVALUE_INT64: return RValue_makeString("int64");
+        case RVALUE_UNDEFINED: return RValue_makeString("undefined");
+        case RVALUE_METHOD: return RValue_makeString("method");
+        case RVALUE_STRUCT: return RValue_makeString("struct");
+        case RVALUE_ASSETREF: return RValue_makeString("ref");
+        default: return RValue_makeString("default");
+    }
+}
 #endif
 
 // ===[ STRING FUNCTIONS ]===
