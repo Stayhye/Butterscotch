@@ -14235,9 +14235,9 @@ static RValue fontAddSpriteImpl(VMContext* ctx, int32_t spriteIndex, uint16_t* c
     uint32_t glyphCount = charCount;
     if (glyphCount > sprite->textureCount) glyphCount = sprite->textureCount;
 
-    // GM 2023.2 changed sprite-font glyph placement to subtract the source sprite's origin.
-    // (See GameMaker-HTML5's commit a7c5b909209d5a28602fedfe2031965386a99921)
-    bool spriteFontSubtractsOrigin = DataWin_isVersionAtLeast(dw, 2023, 2, 0, 0);
+    // GM 2023.4 changed sprite-font glyph placement to subtract the source sprite's origin.
+    // (See GameMaker-HTML5's commit a7c5b909209d5a28602fedfe2031965386a99921, this behavior can first be seen in 2023.4.0.113)
+    bool spriteFontSubtractsOrigin = DataWin_isVersionAtLeast(dw, 2023, 4, 0, 0);
 
     // Compute emSize (max bounding height across all frames) and biggestShift
     uint32_t maxHeight = 0;
