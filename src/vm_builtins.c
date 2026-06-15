@@ -8767,6 +8767,17 @@ static RValue builtin_base64_decode(MAYBE_UNUSED VMContext* ctx, RValue* args, M
     return RValue_makeOwnedString((char*) out);
 }
 
+// Converts the "digest" to a hex string
+static char* convertToHexString(unsigned char* digest, int32_t digestLength) {
+    int32_t stringLength = digestLength * 2;
+    char* hex = safeMalloc(stringLength + 1);
+    for (int32_t i = 0; digestLength > i; i++) {
+        sprintf(&hex[i * 2], "%02x", digest[i]);
+    }
+    hex[stringLength] = '\0';
+    return hex;
+}
+
 // buffer_md5(buffer, offset, size) -> hex string (32 chars, lowercase). Uses the RFC 1321 reference impl in vendor/md5.
 static RValue builtin_buffer_md5(MAYBE_UNUSED VMContext* ctx, RValue* args, MAYBE_UNUSED int32_t argCount) {
     Runner* runner = ctx->runner;
@@ -8784,13 +8795,7 @@ static RValue builtin_buffer_md5(MAYBE_UNUSED VMContext* ctx, RValue* args, MAYB
     if (size > 0) MD5Update(&mctx, buf->data + offset, (unsigned int) size);
     unsigned char digest[16];
     MD5Final(digest, &mctx);
-
-    char* hex = safeMalloc(33);
-    for (int32_t i = 0; 16 > i; i++) {
-        sprintf(&hex[i * 2], "%02x", digest[i]);
-    }
-    hex[32] = '\0';
-    return RValue_makeOwnedString(hex);
+    return RValue_makeOwnedString(convertToHexString(digest, 16));
 }
 
 // buffer_sha1(buffer, offset, size) -> hex string (40 chars, lowercase). Uses Steve Reid's C implementation in vendor/sha1.
@@ -8811,12 +8816,7 @@ static RValue builtin_buffer_sha1(MAYBE_UNUSED VMContext* ctx, RValue* args, MAY
     unsigned char digest[20];
     SHA1Final(digest, &sctx);
 
-    char* hex = safeMalloc(41);
-    for (int32_t i = 0; 20 > i; i++) {
-        sprintf(&hex[i * 2], "%02x", digest[i]);
-    }
-    hex[40] = '\0';
-    return RValue_makeOwnedString(hex);
+    return RValue_makeOwnedString(convertToHexString(digest, 20));
 }
 
 // sha1_file(file) - hex string (40 chars, lowercase).
@@ -8843,13 +8843,7 @@ static RValue builtin_sha1_file(MAYBE_UNUSED VMContext* ctx, RValue* args, MAYBE
     unsigned char digest[20];
     SHA1Final(digest, &sctx);
 
-    char* hex = safeMalloc(41);
-    for (int32_t i = 0; 20 > i; i++) {
-        sprintf(&hex[i * 2], "%02x", digest[i]);
-    }
-    hex[40] = '\0';
-
-    return RValue_makeOwnedString(hex);
+    return RValue_makeOwnedString(convertToHexString(digest, 20));
 }
 
 // buffer_get_surface(buffer, surface, offset) -> bool
