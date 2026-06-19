@@ -2542,6 +2542,11 @@ static RValue builtin_lerp(MAYBE_UNUSED VMContext* ctx, RValue* args, int32_t ar
     return RValue_makeReal(result);
 }
 
+static RValue builtin_tan(MAYBE_UNUSED VMContext* ctx, RValue* args, int32_t argCount) {
+    if (1 > argCount) return RValue_makeReal(0.0);
+    return RValue_makeReal(GMLReal_tan(RValue_toReal(args[0])));
+}
+
 static RValue builtin_point_distance(MAYBE_UNUSED VMContext* ctx, RValue* args, int32_t argCount) {
     if (4 > argCount) return RValue_makeReal(0.0);
     GMLReal dx = RValue_toReal(args[2]) - RValue_toReal(args[0]);
@@ -15193,6 +15198,7 @@ void VMBuiltins_registerAll(VMContext* ctx) {
     VM_registerBuiltin(ctx, "radtodeg", builtin_radtodeg);
     VM_registerBuiltin(ctx, "clamp", builtin_clamp);
     VM_registerBuiltin(ctx, "lerp", builtin_lerp);
+    VM_registerBuiltin(ctx, "tan", builtin_tan);
     VM_registerBuiltin(ctx, "point_distance", builtin_point_distance);
     VM_registerBuiltin(ctx, "point_in_rectangle", builtin_point_in_rectangle);
     VM_registerBuiltin(ctx, "point_in_circle", builtin_point_in_circle);
