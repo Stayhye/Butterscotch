@@ -52,7 +52,7 @@ check() {
     configlog "checking $1"
     shift
     printf 'cmd: %s\n' "$CC $nologo $cflags tmp/test.c ${output}tmp/a.out $*" >> tmp/config.log
-    if $CC $nologo $cflags tmp/test.c ${output}tmp/a.out "$@" >> tmp/config.log 2>&1; then
+    if $CC $cflags tmp/test.c ${output}tmp/a.out "$@" >> tmp/config.log 2>&1; then
         printyes
         return 0
     else
@@ -69,7 +69,8 @@ configlog 'checking the C compiler CLI syntax'
 if $CC /nologo tmp/test.c /Fe:tmp/a.out >> tmp/config.log 2>&1; then
     printgreen 'msvc'
     syntax=msvc
-    nologo='/nologo'
+    CC="$CC /nologo"
+    cflags='/Oi-' # equivalent to -fno-builtin
     output='/Fe:'
     config 'MSVC := 1'
     config 'OBJ_EXT := obj'
