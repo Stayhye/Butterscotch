@@ -77,7 +77,7 @@ static void imaAdpcmDecode(const uint8_t* adpcmData, uint32_t adpcmSize, int16_t
 // ===[ SOUNDBNK.BIN Parser ]===
 
 static void parseSoundBank(Ps2AudioSystem* ps2) {
-    char* path = PS2Utils_createDevicePath("SOUNDBNK.BIN");
+    char* path = PS2Utils_createDevicePath("ASSETS/SOUNDBNK.BIN");
 
     FILE* f = fopen(path, "rb");
     free(path);
@@ -159,7 +159,7 @@ static void parseSoundBank(Ps2AudioSystem* ps2) {
 static void openSoundsBin(Ps2AudioSystem* ps2) {
     // SOUNDS.BIN is always alongside the ELF on the boot device, not in the FileSystem mappings
     // We keep the file handle open and read on demand to avoid loading everything into EE RAM
-    char* path = PS2Utils_createDevicePath("SOUNDS.BIN");
+    char* path = PS2Utils_createDevicePath("ASSETS/SOUNDS.BIN");
 
     ps2->soundsFile = fopen(path, "rb");
     if (ps2->soundsFile == nullptr) {

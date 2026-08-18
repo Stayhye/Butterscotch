@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
 
     logInfo("Loaded FS drivers!\n");
 
-    char* dataWinPath = PS2Utils_createDevicePath("DATA.WIN");
+    char* dataWinPath = PS2Utils_createDevicePath("ASSETS/DATA.WIN");
 
     logInfo("Butterscotch PS2 - Loading %s\n", dataWinPath);
 
@@ -385,7 +385,7 @@ int main(int argc, char* argv[]) {
     // ===[ Load CONFIG.JSN ]===
     PS2Overlay_drawStatusScreen(nullptr, "Loading CONFIG.JSN...", false);
 
-    char* configJsonPath = PS2Utils_createDevicePath("CONFIG.JSN");
+    char* configJsonPath = PS2Utils_createDevicePath("ASSETS/CONFIG.JSN");
     FILE* configFile = fopen(configJsonPath, "rb");
     JsonValue* configRoot = nullptr;
 

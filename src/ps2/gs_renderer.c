@@ -73,7 +73,7 @@ static uint8_t* loadFileRaw(const char* path, uint32_t* outSize) {
 
 // ===[ Atlas Loading ]===
 static void loadAtlas(GsRenderer* gs) {
-    char* atlasBinPath = PS2Utils_createDevicePath("ATLAS.BIN");
+    char* atlasBinPath = PS2Utils_createDevicePath("ASSETS/ATLAS.BIN");
     FILE* f = fopen(atlasBinPath, "rb");
     if (f == nullptr) {
         logError("GsRenderer: Failed to open %s\n", atlasBinPath);
@@ -195,7 +195,7 @@ static void loadAndUploadCLUTs(GsRenderer* gs) {
     // Load and upload CLUT4 (4bpp palettes: 16 colors * 4 bytes = 64 bytes each)
     {
         uint32_t clut4FileSize;
-        uint8_t* clut4Data = loadFileRaw("CLUT4.BIN", &clut4FileSize);
+        uint8_t* clut4Data = loadFileRaw("ASSETS/CLUT4.BIN", &clut4FileSize);
         gs->clut4Count = clut4FileSize / CLUT4_ENTRY_SIZE;
         logInfo("GsRenderer: CLUT4.BIN loaded - %u CLUTs (%u bytes)\n", gs->clut4Count, clut4FileSize);
 
@@ -223,7 +223,7 @@ static void loadAndUploadCLUTs(GsRenderer* gs) {
     // Load and upload CLUT8 (8bpp palettes: 256 colors * 4 bytes = 1024 bytes each)
     {
         uint32_t clut8FileSize;
-        uint8_t* clut8Data = loadFileRaw("CLUT8.BIN", &clut8FileSize);
+        uint8_t* clut8Data = loadFileRaw("ASSETS/CLUT8.BIN", &clut8FileSize);
         gs->clut8Count = clut8FileSize / CLUT8_ENTRY_SIZE;
         logInfo("GsRenderer: CLUT8.BIN loaded - %u CLUTs (%u bytes)\n", gs->clut8Count, clut8FileSize);
 
@@ -1057,7 +1057,7 @@ static void gsInit(Renderer* renderer, DataWin* dataWin) {
     loadAtlas(gs);
 
     // Open TEXTURES.BIN and keep it open for on-demand atlas loading
-    char* texturesBinPath = PS2Utils_createDevicePath("TEXTURES.BIN");
+    char* texturesBinPath = PS2Utils_createDevicePath("ASSETS/TEXTURES.BIN");
     gs->texturesFile = fopen(texturesBinPath, "rb");
     if (gs->texturesFile == nullptr) {
         logError("GsRenderer: Failed to open %s\n", texturesBinPath);

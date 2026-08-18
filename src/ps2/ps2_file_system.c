@@ -182,7 +182,7 @@ static void copyIconIcoIfMissing(const char* dirPath) {
     }
 
     // Copy from boot device
-    char* srcPath = PS2Utils_createDevicePath("ICON.ICO");
+    char* srcPath = PS2Utils_createDevicePath("ASSETS/ICON.ICO");
     if (copyFile(srcPath, dstPath)) {
         logInfo("Ps2FileSystem: Copied ICON.ICO to %s\n", dirPath);
     } else {
