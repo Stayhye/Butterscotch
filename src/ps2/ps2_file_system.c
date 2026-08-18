@@ -133,7 +133,7 @@ static void generateIconSys(uint8_t* buffer, const char* gameTitle, const SaveIc
 
     // Icon filenames (64 bytes each) at 0x104, 0x144, 0x184
     // All three (normal, copy, delete) reference the same icon file
-    const char* iconFileName = "ICON.ICO";
+    const char* iconFileName = "ASSETS/ICON.ICO";
     size_t iconNameLen = strlen(iconFileName);
     memcpy(buffer + 0x104, iconFileName, iconNameLen);
     memcpy(buffer + 0x144, iconFileName, iconNameLen);
