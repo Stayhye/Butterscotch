@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-ps2:
-    name: Build (PS2)${{ matrix.label }}
+    name: Build (PS2)${{ matrix.label }} 
     runs-on: ubuntu-24.04
     container:
       image: ps2dev/ps2dev:latest 
