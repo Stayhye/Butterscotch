@@ -8,7 +8,7 @@ jobs:
     name: Build (PS2)${{ matrix.label }}
     runs-on: ubuntu-24.04
     container:
-      image: ps2dev/ps2dev:latest
+      image: ps2dev/ps2dev:latest 
     env:
       CCACHE_IGNOREOPTIONS: "-DBUTTERSCOTCH_COMMIT_HASH=* -DBUTTERSCOTCH_COMMIT_DATE=*"
     strategy:
