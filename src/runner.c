@@ -1147,6 +1147,11 @@ void Runner_drawGUI(Runner* runner, int32_t windowW, int32_t windowH, int32_t ta
     fireDrawSubtype(runner, drawables, drawableCount, DRAW_GUI);
     fireDrawSubtype(runner, drawables, drawableCount, DRAW_GUI_END);
     endGuiPass(runner);
+
+if (runner->fpsRealFrameStartNanos != 0) {
+        uint64_t elapsed = nowNanos() - runner->fpsRealFrameStartNanos;
+        if (elapsed > 0) runner->fpsReal = 1e9f / (double)elapsed;
+    }
 }
 
 void Runner_drawPre(Runner* runner, int32_t windowW, int32_t windowH) {
