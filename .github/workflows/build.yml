@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [ps2-only]
   pull_request:
-    branches: [main]
+    branches: [ps2-only]
 
 jobs:
   Consoles:
